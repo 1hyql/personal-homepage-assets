@@ -21,8 +21,10 @@ function updateStatus() {
 	    const diffSeconds = totalSeconds % 60;
 
 	    document.getElementById('uptime-text').innerText = 
-		        `已运行 ${diffDays} 天 ${diffHours} 小时 ${diffMinutes} 分 ${diffSeconds} 秒`;
+		        `已运行 ${diffDays} 天 ${diffHours} 小时 ${diffMinutes} 分 `;
 }
+// 计秒功能已停用：暂不展示秒数
+// 原显示：`${diffSeconds} 秒`
 
 updateStatus();
 setInterval(updateStatus, 1000);

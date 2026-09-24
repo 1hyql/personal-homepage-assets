@@ -1,4 +1,4 @@
-const JSON_URL = 'music.json';
+const JSON_URL = 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/scripts/music.json';
 
 let playlist = [];
 let currentIndex = 0;

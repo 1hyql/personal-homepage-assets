@@ -1,7 +1,7 @@
 {
-  "defaultPcBg": "在这里填默认电脑端背景图链接",
-  "defaultMobileBg": "在这里填默认手机端背景图链接",
-  "defaultCover":
+  "defaultPcBg": "",
+  "defaultMobileBg": "",
+  "defaultCover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/default.jpg",
   "playlist": [
     {
       "title": "Daylight",
@@ -47,7 +47,7 @@
       "title": "The way i still love you",
       "artist": "Reynard Silva",
       "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/The way i still love you.jpg",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/That way i stall love you.mp3",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/The way i still love you.mp3",
       "pcBg": "",
       "mobileBg": ""
     },

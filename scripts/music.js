@@ -1,12 +1,13 @@
-const JSON_URL = 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/scripts/music.json';
+const JSON_URL = 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.12/scripts/music.json';
 
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
 let playMode = 'list';
 let audio = new Audio();
-let config = { defaultPcBg: '', defaultMobileBg: '' };
+let config = { defaultPcBg: '', defaultMobileBg: '', defaultCover: '' };
 
+// DOM 元素获取
 const titleEl = document.getElementById('title');
 const artistEl = document.getElementById('artist');
 const playIcon = document.getElementById('play-icon');
@@ -39,14 +40,16 @@ async function init() {
   }
 }
 
+
 function applyBackground(index) {
   if (!playlist[index]) return;
   const song = playlist[index];
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
+  // 优先歌曲自定义 -> 全局默认背景图 -> 歌曲封面 -> 全局默认封面
   let bgUrl = isMobile 
-    ? (song.mobileBg || config.defaultMobileBg) 
-    : (song.pcBg || config.defaultPcBg);
+    ? (song.mobileBg || config.defaultMobileBg || song.cover || config.defaultCover) 
+    : (song.pcBg || config.defaultPcBg || song.cover || config.defaultCover);
 
   if (bgUrl) {
     bgContainer.style.backgroundImage = `url('${bgUrl}')`;
@@ -114,6 +117,8 @@ function switchMode() {
   playMode = modes[(idx + 1) % modes.length];
   modeBtn.innerHTML = modeIcons[playMode];
 }
+
+
 function renderPlaylist() {
   playlistItems.innerHTML = '';
   playlist.forEach((song, index) => {
@@ -121,30 +126,20 @@ function renderPlaylist() {
     div.className = `playlist-item ${index === currentIndex ? 'active' : ''}`;
     div.draggable = true;
     div.dataset.index = index;
-    
+
+    // 处理封面默认值
+    let coverUrl = song.cover || config.defaultCover || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+
     div.innerHTML = `
       <div class="drag-handle">☰</div>
-      
-
-let coverUrl = song.cover || config.defaultCover || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
-
-div.innerHTML = `
-  <div class="drag-handle">☰</div>
-  <img src="${coverUrl}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzMzIi8+PC9zdmc+'">
-  <div class="item-info">
-    <div class="t">${song.title}</div>
-    <div class="a">${song.artist}</div>
-  </div>
-  <button class="del-btn" data-index="${index}">&times;</button>
-`;
-      
+      <img src="${coverUrl}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzMzIi8+PC9zdmc+'">
       <div class="item-info">
         <div class="t">${song.title}</div>
         <div class="a">${song.artist}</div>
       </div>
       <button class="del-btn" data-index="${index}">&times;</button>
     `;
-    
+
     div.addEventListener('click', (e) => {
       if (e.target.classList.contains('del-btn') || e.target.classList.contains('drag-handle')) return;
       loadSong(index);

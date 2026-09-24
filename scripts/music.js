@@ -1,10 +1,13 @@
-const JSON_URL = 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.13/scripts/music.json';
+const JSON_URL = 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/scripts/music.json';
 
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
 let playMode = 'list';
 let audio = new Audio();
+let preloader = new Audio(); // 预加载器
+preloader.preload = 'auto';
+
 let config = { defaultPcBg: '', defaultMobileBg: '', defaultCover: '' };
 
 // DOM 元素获取
@@ -31,8 +34,18 @@ async function init() {
     const data = await res.json();
     config = data;
     playlist = data.playlist;
+    
+    // 从 localStorage 恢复上次播放的索引
+    const savedIndex = localStorage.getItem('music_currentIndex');
+    if (savedIndex !== null) {
+      const idx = parseInt(savedIndex);
+      if (idx >= 0 && idx < playlist.length) {
+        currentIndex = idx;
+      }
+    }
+    
     renderPlaylist();
-    loadSong(0);
+    loadSong(currentIndex); // 载入恢复的歌曲
   } catch (err) {
     titleEl.textContent = '加载失败';
     artistEl.textContent = '请检查 music.json 路径或 CORS 配置';
@@ -40,13 +53,11 @@ async function init() {
   }
 }
 
-
 function applyBackground(index) {
   if (!playlist[index]) return;
   const song = playlist[index];
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
-  // 优先歌曲自定义 -> 全局默认背景图 -> 歌曲封面 -> 全局默认封面
   let bgUrl = isMobile 
     ? (song.mobileBg || config.defaultMobileBg || song.cover || config.defaultCover) 
     : (song.pcBg || config.defaultPcBg || song.cover || config.defaultCover);
@@ -58,9 +69,28 @@ function applyBackground(index) {
   }
 }
 
-function loadSong(index) {
+// 核心：预加载下一首
+function preloadNextSong() {
+  if (playlist.length <= 1) return;
+  let nextIndex = (currentIndex + 1) % playlist.length;
+  if (playMode === 'random') nextIndex = Math.floor(Math.random() * playlist.length);
+  else if (playMode === 'single') nextIndex = currentIndex;
+  
+  const nextSong = playlist[nextIndex];
+  if (nextSong && preloader.src !== nextSong.src) {
+    preloader.src = nextSong.src;
+    preloader.load();
+  }
+}
+
+// 核心：加载歌曲（autoPlay 决定是否载入后立刻播放）
+function loadSong(index, autoPlay = false) {
   if (!playlist.length) return;
   currentIndex = index;
+  
+  // 记录进度到本地
+  localStorage.setItem('music_currentIndex', index);
+  
   const song = playlist[currentIndex];
   titleEl.textContent = song.title;
   artistEl.textContent = song.artist;
@@ -69,19 +99,29 @@ function loadSong(index) {
 
   applyBackground(currentIndex);
 
-  if (isPlaying) audio.play().catch(e => console.log('播放被拦截:', e));
-  
+  // 更新列表高亮
   document.querySelectorAll('.playlist-item').forEach((el, i) => {
     el.classList.toggle('active', i === currentIndex);
   });
+
+  // 如果需要自动播放
+  if (autoPlay) {
+    audio.play().catch(e => {
+      console.log('播放被拦截:', e);
+      // 如果播放被拦截，重置UI状态
+      isPlaying = false;
+      updatePlayIcon();
+    });
+  }
 }
 
 function togglePlay() {
   if (!playlist.length) return;
-  if (isPlaying) audio.pause();
-  else audio.play().catch(e => console.log('播放失败:', e));
-  isPlaying = !isPlaying;
-  updatePlayIcon();
+  if (audio.paused) {
+    audio.play().catch(e => console.log('播放失败:', e));
+  } else {
+    audio.pause();
+  }
 }
 
 function updatePlayIcon() {
@@ -89,20 +129,19 @@ function updatePlayIcon() {
   else playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
 }
 
-function nextSong() {
+// 核心：上下首逻辑，支持自动判断是否继续播放
+function nextSong(autoPlay = !audio.paused) {
   if (!playlist.length) return;
   if (playMode === 'random') currentIndex = Math.floor(Math.random() * playlist.length);
   else currentIndex = (currentIndex + 1) % playlist.length;
-  loadSong(currentIndex);
-  if (isPlaying) audio.play();
+  loadSong(currentIndex, autoPlay);
 }
 
-function prevSong() {
+function prevSong(autoPlay = !audio.paused) {
   if (!playlist.length) return;
   if (playMode === 'random') currentIndex = Math.floor(Math.random() * playlist.length);
   else currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-  loadSong(currentIndex);
-  if (isPlaying) audio.play();
+  loadSong(currentIndex, autoPlay);
 }
 
 const modes = ['list', 'random', 'single'];
@@ -116,8 +155,9 @@ function switchMode() {
   const idx = modes.indexOf(playMode);
   playMode = modes[(idx + 1) % modes.length];
   modeBtn.innerHTML = modeIcons[playMode];
+  // 模式切换后立即预加载匹配的下一首
+  preloadNextSong();
 }
-
 
 function renderPlaylist() {
   playlistItems.innerHTML = '';
@@ -127,7 +167,6 @@ function renderPlaylist() {
     div.draggable = true;
     div.dataset.index = index;
 
-    // 处理封面默认值
     let coverUrl = song.cover || config.defaultCover || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
 
     div.innerHTML = `
@@ -142,8 +181,7 @@ function renderPlaylist() {
 
     div.addEventListener('click', (e) => {
       if (e.target.classList.contains('del-btn') || e.target.classList.contains('drag-handle')) return;
-      loadSong(index);
-      if (!isPlaying) togglePlay();
+      loadSong(index, true); // 点击列表必然需要自动播放
       playlistPanel.classList.remove('active');
     });
 
@@ -180,11 +218,27 @@ function renderPlaylist() {
   });
 }
 
+// ⭐️ 核心修复：完全依赖底层事件同步状态，彻底避免“卡住”
+audio.addEventListener('play', () => {
+  isPlaying = true;
+  updatePlayIcon();
+});
+
+audio.addEventListener('pause', () => {
+  isPlaying = false;
+  updatePlayIcon();
+});
+
 audio.addEventListener('timeupdate', () => {
   if (!audio.duration) return;
   const percent = (audio.currentTime / audio.duration) * 100;
   progressCurrent.style.width = `${percent}%`;
   currentTimeEl.textContent = formatTime(audio.currentTime);
+
+  // ⭐️ 核心修复：剩余 15 秒时触发预加载
+  if (audio.duration - audio.currentTime <= 15 && audio.duration - audio.currentTime > 0) {
+    preloadNextSong();
+  }
 });
 
 audio.addEventListener('loadedmetadata', () => totalTimeEl.textContent = formatTime(audio.duration));
@@ -194,7 +248,7 @@ audio.addEventListener('ended', () => {
     audio.currentTime = 0;
     audio.play();
   } else {
-    nextSong();
+    nextSong(true); // ⭐️ 自然结束，强制自动播放下一首
   }
 });
 
@@ -211,12 +265,13 @@ progressBar.addEventListener('click', (e) => {
 });
 
 playBtn.addEventListener('click', togglePlay);
-nextBtn.addEventListener('click', nextSong);
-prevBtn.addEventListener('click', prevSong);
+nextBtn.addEventListener('click', () => nextSong());
+prevBtn.addEventListener('click', () => prevSong());
 modeBtn.addEventListener('click', switchMode);
 listBtn.addEventListener('click', () => playlistPanel.classList.add('active'));
 closeListBtn.addEventListener('click', () => playlistPanel.classList.remove('active'));
 
 window.addEventListener('resize', () => applyBackground(currentIndex));
 
+// 启动播放器
 init();

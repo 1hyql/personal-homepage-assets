@@ -6,64 +6,64 @@
     {
       "title": "Daylight",
       "artist": "Seredris",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/Daylight.mp3",
+      "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/daylight.jpg",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/Daylight.mp3",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "Ngau Hung",
       "artist": "Hoaprox/MonBet",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/NgauHung.mp3",
+      "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/Ngau Hung.jpg",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/NgauHung.mp3",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "Please别离去",
       "artist": "Tz安竹",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/Please别离去.mp3",
+      "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/Please别离去.jpg",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/Please别离去.mp3",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "Take me hand",
       "artist": "DAISHI DANCE/Cecile Corbel",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/Take me hand.mp3",
+      "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/Take me hand.jpg",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/Take me hand.mp3",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "That Girl",
       "artist": "草莓酱紫",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/That Girl.m4a",
+      "cover": "",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/That Girl.m4a",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "The way i still love you",
       "artist": "Reynard Silva",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/That way i stall love you.mp3",
+      "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/The way i still love you.jpg",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/That way i stall love you.mp3",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "windy Hill",
       "artist": "unknown",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/windy Hill.mp3",
+      "cover": "",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/windy Hill.mp3",
       "pcBg": "",
       "mobileBg": ""
     },
     {
       "title": "悲伤剧情",
       "artist": "苏星婕",
-      "cover": "在这里填封面图链接",
-      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/悲伤剧情.mp3",
+      "cover": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/悲伤剧情.jpg",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/media/悲伤剧情.mp3",
       "pcBg": "",
       "mobileBg": ""
     }

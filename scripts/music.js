@@ -1,5 +1,3 @@
-const JSON_URL = 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/scripts/music.json';
-
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
@@ -28,10 +26,14 @@ const currentTimeEl = document.getElementById('current-time');
 const totalTimeEl = document.getElementById('total-time');
 const bgContainer = document.getElementById('bg-container');
 
-async function init() {
+// ⭐️ 修改后的初始化逻辑：直接读取 HTML 传入的全局变量
+function init() {
   try {
-    const res = await fetch(JSON_URL, { mode: 'cors' });
-    const data = await res.json();
+    const data = window.MUSIC_DATA;
+    if (!data || !data.playlist || data.playlist.length === 0) {
+      throw new Error('MUSIC_DATA 未定义或歌单为空');
+    }
+    
     config = data;
     playlist = data.playlist;
     
@@ -48,8 +50,8 @@ async function init() {
     loadSong(currentIndex); // 载入恢复的歌曲
   } catch (err) {
     titleEl.textContent = '加载失败';
-    artistEl.textContent = '请检查 music.json 路径或 CORS 配置';
-    console.error('读取 music.json 失败:', err);
+    artistEl.textContent = '请检查 HTML 中的 MUSIC_DATA 配置';
+    console.error('读取 MUSIC_DATA 失败:', err);
   }
 }
 

@@ -26,7 +26,7 @@ const bgContainer = document.getElementById('bg-container');
 
 async function init() {
   try {
-    const res = await fetch(JSON_URL);
+    const res = await fetch(JSON_URL, { mode: 'cors' });
     const data = await res.json();
     config = data;
     playlist = data.playlist;

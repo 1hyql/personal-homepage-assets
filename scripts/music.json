@@ -1,0 +1,71 @@
+{
+  "defaultPcBg": "在这里填默认电脑端背景图链接",
+  "defaultMobileBg": "在这里填默认手机端背景图链接",
+  "defaultCover":
+  "playlist": [
+    {
+      "title": "Daylight",
+      "artist": "Seredris",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/Daylight.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "Ngau Hung",
+      "artist": "Hoaprox/MonBet",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/NgauHung.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "Please别离去",
+      "artist": "Tz安竹",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/Please别离去.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "Take me hand",
+      "artist": "DAISHI DANCE/Cecile Corbel",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/Take me hand.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "That Girl",
+      "artist": "草莓酱紫",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/That Girl.m4a",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "The way i still love you",
+      "artist": "Reynard Silva",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/That way i stall love you.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "windy Hill",
+      "artist": "unknown",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/windy Hill.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    },
+    {
+      "title": "悲伤剧情",
+      "artist": "苏星婕",
+      "cover": "在这里填封面图链接",
+      "src": "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.9/media/悲伤剧情.mp3",
+      "pcBg": "",
+      "mobileBg": ""
+    }
+  ]
+}

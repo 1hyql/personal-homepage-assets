@@ -26,7 +26,7 @@ const currentTimeEl = document.getElementById('current-time');
 const totalTimeEl = document.getElementById('total-time');
 const bgContainer = document.getElementById('bg-container');
 
-// ⭐️ 修改后的初始化逻辑：直接读取 HTML 传入的全局变量
+// ⭐️ 初始化逻辑：直接读取 HTML 里注入的 MUSIC_DATA
 function init() {
   try {
     const data = window.MUSIC_DATA;
@@ -47,7 +47,7 @@ function init() {
     }
     
     renderPlaylist();
-    loadSong(currentIndex); // 载入恢复的歌曲
+    loadSong(currentIndex); // 载入恢复的歌曲（不自动播放）
   } catch (err) {
     titleEl.textContent = '加载失败';
     artistEl.textContent = '请检查 HTML 中的 MUSIC_DATA 配置';
@@ -71,7 +71,7 @@ function applyBackground(index) {
   }
 }
 
-// 核心：预加载下一首
+// 预加载下一首
 function preloadNextSong() {
   if (playlist.length <= 1) return;
   let nextIndex = (currentIndex + 1) % playlist.length;
@@ -85,7 +85,7 @@ function preloadNextSong() {
   }
 }
 
-// 核心：加载歌曲（autoPlay 决定是否载入后立刻播放）
+// 核心：加载歌曲，autoPlay 决定是否自动播放
 function loadSong(index, autoPlay = false) {
   if (!playlist.length) return;
   currentIndex = index;
@@ -101,16 +101,25 @@ function loadSong(index, autoPlay = false) {
 
   applyBackground(currentIndex);
 
+  // ⭐️ 更新系统锁屏和通知栏的元数据
+  if ('mediaSession' in navigator) {
+    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/daylight.jpg';
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: song.title,
+      artist: song.artist,
+      album: '我的音乐',
+      artwork: [{ src: coverUrl, sizes: '512x512', type: 'image/jpeg' }]
+    });
+  }
+
   // 更新列表高亮
   document.querySelectorAll('.playlist-item').forEach((el, i) => {
     el.classList.toggle('active', i === currentIndex);
   });
 
-  // 如果需要自动播放
   if (autoPlay) {
     audio.play().catch(e => {
       console.log('播放被拦截:', e);
-      // 如果播放被拦截，重置UI状态
       isPlaying = false;
       updatePlayIcon();
     });
@@ -131,7 +140,7 @@ function updatePlayIcon() {
   else playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
 }
 
-// 核心：上下首逻辑，支持自动判断是否继续播放
+// 上下首逻辑，支持自动判断是否继续播放
 function nextSong(autoPlay = !audio.paused) {
   if (!playlist.length) return;
   if (playMode === 'random') currentIndex = Math.floor(Math.random() * playlist.length);
@@ -157,7 +166,6 @@ function switchMode() {
   const idx = modes.indexOf(playMode);
   playMode = modes[(idx + 1) % modes.length];
   modeBtn.innerHTML = modeIcons[playMode];
-  // 模式切换后立即预加载匹配的下一首
   preloadNextSong();
 }
 
@@ -183,7 +191,7 @@ function renderPlaylist() {
 
     div.addEventListener('click', (e) => {
       if (e.target.classList.contains('del-btn') || e.target.classList.contains('drag-handle')) return;
-      loadSong(index, true); // 点击列表必然需要自动播放
+      loadSong(index, true); // 点击列表必然自动播放
       playlistPanel.classList.remove('active');
     });
 
@@ -220,15 +228,17 @@ function renderPlaylist() {
   });
 }
 
-// ⭐️ 核心修复：完全依赖底层事件同步状态，彻底避免“卡住”
+// ⭐️ 同步播放/暂停状态到系统锁屏
 audio.addEventListener('play', () => {
   isPlaying = true;
   updatePlayIcon();
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
 });
 
 audio.addEventListener('pause', () => {
   isPlaying = false;
   updatePlayIcon();
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
 });
 
 audio.addEventListener('timeupdate', () => {
@@ -237,7 +247,7 @@ audio.addEventListener('timeupdate', () => {
   progressCurrent.style.width = `${percent}%`;
   currentTimeEl.textContent = formatTime(audio.currentTime);
 
-  // ⭐️ 核心修复：剩余 15 秒时触发预加载
+  // ⭐️ 剩余 15 秒时触发预加载
   if (audio.duration - audio.currentTime <= 15 && audio.duration - audio.currentTime > 0) {
     preloadNextSong();
   }
@@ -250,7 +260,7 @@ audio.addEventListener('ended', () => {
     audio.currentTime = 0;
     audio.play();
   } else {
-    nextSong(true); // ⭐️ 自然结束，强制自动播放下一首
+    nextSong(true); // 自然结束强制下一首
   }
 });
 
@@ -274,6 +284,17 @@ listBtn.addEventListener('click', () => playlistPanel.classList.add('active'));
 closeListBtn.addEventListener('click', () => playlistPanel.classList.remove('active'));
 
 window.addEventListener('resize', () => applyBackground(currentIndex));
+
+// ⭐️ 注册锁屏/通知栏的控制按钮事件
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => { audio.play(); });
+  navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); });
+  navigator.mediaSession.setActionHandler('previoustrack', () => { prevSong(true); });
+  navigator.mediaSession.setActionHandler('nexttrack', () => { nextSong(true); });
+  navigator.mediaSession.setActionHandler('seekto', (details) => {
+    if (details.seekTime) audio.currentTime = details.seekTime;
+  });
+}
 
 // 启动播放器
 init();

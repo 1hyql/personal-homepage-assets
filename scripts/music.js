@@ -21,7 +21,7 @@ const closeListBtn = document.getElementById('close-list-btn');
 const lyricsBtn = document.getElementById('lyrics-btn');
 const playlistPanel = document.getElementById('playlist-panel');
 const playlistItems = document.getElementById('playlist-items');
-const lyricsContainer = document.getElementById('lyrics-container');
+const lyricsSection = document.getElementById('lyrics-section');
 const lyricsContent = document.getElementById('lyrics-content');
 const progressBar = document.getElementById('progress-bar');
 const progressCurrent = document.getElementById('progress-current');
@@ -184,7 +184,9 @@ async function loadLyricsFromUrl(url) {
     parseLrcText(text);
   } catch (error) {
     console.error('加载歌词失败:', error);
-    lyricsContent.innerHTML = '<div class="lyrics-line" id="no-lyrics">歌词加载失败</div>';
+    if (lyricsContent) {
+      lyricsContent.innerHTML = '<div class="lyrics-line" id="no-lyrics">歌词加载失败</div>';
+    }
     lyricsLines = [];
   }
 }
@@ -210,17 +212,19 @@ function parseLrcText(text) {
   lyricsLines.sort((a, b) => a.time - b.time);
   
   // 渲染歌词
-  lyricsContent.innerHTML = '';
-  lyricsLines.forEach((line, index) => {
-    const div = document.createElement('div');
-    div.className = 'lyrics-line';
-    div.dataset.time = line.time;
-    div.textContent = line.text;
-    div.addEventListener('click', () => {
-      audio.currentTime = line.time;
+  if (lyricsContent) {
+    lyricsContent.innerHTML = '';
+    lyricsLines.forEach((line, index) => {
+      const div = document.createElement('div');
+      div.className = 'lyrics-line';
+      div.dataset.time = line.time;
+      div.textContent = line.text;
+      div.addEventListener('click', () => {
+        audio.currentTime = line.time;
+      });
+      lyricsContent.appendChild(div);
     });
-    lyricsContent.appendChild(div);
-  });
+  }
 }
 
 function updateLyrics() {
@@ -247,20 +251,19 @@ function updateLyrics() {
     line.classList.toggle('active', index === activeIndex);
   });
   
-  // 如果有歌词，滚动到当前行
-  if (activeIndex >= 0) {
+  // 如果有歌词容器，滚动到当前行
+  if (activeIndex >= 0 && lyricsSection) {
     const activeLine = document.querySelectorAll('.lyrics-line')[activeIndex];
-    const lyricsWrapper = document.getElementById('lyrics-wrapper');
-    
-    // 计算滚动位置
-    const lineHeight = activeLine.offsetHeight;
-    const wrapperHeight = lyricsWrapper.offsetHeight;
-    const lineTop = activeLine.offsetTop;
-    const lineBottom = lineTop + lineHeight;
-    
-    if (lineTop < lyricsWrapper.scrollTop || lineBottom > lyricsWrapper.scrollTop + wrapperHeight) {
-      // 居中显示当前行
-      lyricsWrapper.scrollTop = lineTop - (wrapperHeight / 2) + (lineHeight / 2);
+    if (activeLine && lyricsSection) {
+      const lineHeight = activeLine.offsetHeight;
+      const wrapperHeight = lyricsSection.offsetHeight;
+      const lineTop = activeLine.offsetTop;
+      const lineBottom = lineTop + lineHeight;
+      
+      if (lineTop < lyricsSection.scrollTop || lineBottom > lyricsSection.scrollTop + wrapperHeight) {
+        // 居中显示当前行
+        lyricsSection.scrollTop = lineTop - (wrapperHeight / 2) + (lineHeight / 2);
+      }
     }
   }
   
@@ -365,8 +368,8 @@ function switchMode() {
 }
 
 function toggleLyrics() {
-  const isVisible = lyricsContainer.style.display !== 'none';
-  lyricsContainer.style.display = isVisible ? 'none' : 'block';
+  const isVisible = lyricsSection.style.display !== 'none';
+  lyricsSection.style.display = isVisible ? 'none' : 'block';
   lyricsBtn.classList.toggle('active', !isVisible);
   
   // 如果显示歌词，立即更新一次
@@ -467,7 +470,7 @@ audio.addEventListener('timeupdate', () => {
   currentTimeEl.textContent = formatTime(audio.currentTime);
 
   // 更新歌词
-  if (lyricsContainer.style.display === 'block') {
+  if (lyricsSection && lyricsSection.style.display !== 'none') {
     updateLyrics();
   }
 

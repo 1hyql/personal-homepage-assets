@@ -1,0 +1,112 @@
+.lyrics-container {
+  height: 200px;
+  overflow: hidden;
+  margin: 20px 0;
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.lyrics-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.lyrics-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lyrics-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lyrics-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.lyrics-content {
+  text-align: center;
+  padding: 10px;
+}
+
+.lyrics-line {
+  margin: 8px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+  cursor: default;
+  user-select: none;
+}
+
+.lyrics-line.active {
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.lyrics-line:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+#no-lyrics {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .lyrics-container {
+    height: 150px;
+    margin: 10px 0;
+  }
+  
+  .lyrics-line {
+    font-size: 12px;
+  }
+  
+  .lyrics-line.active {
+    font-size: 14px;
+  }
+}
+
+/* 歌词按钮样式 */
+#lyrics-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#lyrics-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+#lyrics-btn.active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 滚动动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lyrics-line.active {
+  animation: fadeIn 0.3s ease;
+}

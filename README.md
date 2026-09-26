@@ -10,4 +10,4 @@
 | `docs/` | README、LICENSE、资源来源说明 |
 
 引用本仓库资源的网站：
-- hyql.fe5.net:2419
+- hyql.bbroot.com:2419

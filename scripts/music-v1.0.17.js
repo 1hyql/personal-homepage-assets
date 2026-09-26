@@ -18,48 +18,15 @@ const nextBtn = document.getElementById('next-btn');
 const modeBtn = document.getElementById('mode-btn');
 const listBtn = document.getElementById('list-btn');
 const closeListBtn = document.getElementById('close-list-btn');
-const lyricsBtn = document.getElementById('lyrics-btn');
 const playlistPanel = document.getElementById('playlist-panel');
 const playlistItems = document.getElementById('playlist-items');
-const lyricsContainer = document.getElementById('lyrics-container');
-const lyricsContent = document.getElementById('lyrics-content');
 const progressBar = document.getElementById('progress-bar');
 const progressCurrent = document.getElementById('progress-current');
 const currentTimeEl = document.getElementById('current-time');
 const totalTimeEl = document.getElementById('total-time');
 const bgContainer = document.getElementById('bg-container');
 
-// 歌词相关变量
-let currentLyrics = null;
-let lyricsLines = [];
-let lyricsTimeoutId = null;
-
-// 等待音乐数据加载完成
-window.addEventListener('load', async () => {
-  await loadMusicData();
-  init();
-});
-
-async function loadMusicData() {
-  try {
-    const response = await fetch('/workspace/music-data.json');
-    if (!response.ok) {
-      throw new Error('Failed to load music data');
-    }
-    const data = await response.json();
-    window.MUSIC_DATA = data;
-  } catch (error) {
-    console.error('加载音乐数据失败:', error);
-    // 设置默认数据防止页面崩溃
-    window.MUSIC_DATA = {
-      defaultPcBg: "",
-      defaultMobileBg: "",
-      defaultCover: "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.17/images/music/cover/default.jpg",
-      playlist: []
-    };
-  }
-}
-
+// ⭐️ 初始化逻辑：直接读取 HTML 里注入的 MUSIC_DATA
 function init() {
   try {
     const data = window.MUSIC_DATA;
@@ -81,52 +48,11 @@ function init() {
     
     renderPlaylist();
     loadSong(currentIndex); // 载入恢复的歌曲（不自动播放）
-    
-    // 设置页面可见性变化监听，修复离开浏览器后暂停问题
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // 设置页面焦点变化监听
-    document.addEventListener('pagehide', handlePageHide);
-    document.addEventListener('pageshow', handlePageShow);
-    
   } catch (err) {
     titleEl.textContent = '加载失败';
-    artistEl.textContent = '请检查音乐数据配置';
+    artistEl.textContent = '请检查 HTML 中的 MUSIC_DATA 配置';
     console.error('读取 MUSIC_DATA 失败:', err);
   }
-}
-
-function handleVisibilityChange() {
-  if (document.hidden) {
-    // 页面隐藏时，保持播放状态
-    console.log('页面隐藏，继续播放');
-  }
-}
-
-function handlePageHide(event) {
-  // 页面即将被卸载时，保存播放状态
-  if (event.persisted) {
-    // 页面被缓存，保存播放状态
-    localStorage.setItem('music_isPlaying', isPlaying);
-    localStorage.setItem('music_currentTime', audio.currentTime);
-    console.log('页面被缓存，保存播放状态');
-  }
-}
-
-function handlePageShow(event) {
-  // 页面重新显示时，恢复播放状态
-  const wasPlaying = localStorage.getItem('music_isPlaying') === 'true';
-  const savedTime = localStorage.getItem('music_currentTime');
-  
-  if (wasPlaying && audio.paused) {
-    // 恢复播放
-    audio.currentTime = parseFloat(savedTime) || 0;
-    audio.play().catch(e => console.log('恢复播放失败:', e));
-  }
-  
-  // 清理保存的状态
-  localStorage.removeItem('music_isPlaying');
-  localStorage.removeItem('music_currentTime');
 }
 
 function applyBackground(index) {
@@ -159,92 +85,6 @@ function preloadNextSong() {
   }
 }
 
-// 歌词相关函数
-function loadLyrics(index) {
-  if (!playlist[index]) return;
-  
-  const song = playlist[index];
-  currentLyrics = song.lyrics;
-  
-  if (!currentLyrics || currentLyrics.length === 0) {
-    lyricsContent.innerHTML = '<div class="lyrics-line" id="no-lyrics">暂无歌词</div>';
-    lyricsLines = [];
-    return;
-  }
-  
-  // 按时间排序歌词
-  lyricsLines = [...currentLyrics].sort((a, b) => a.time - b.time);
-  
-  // 渲染歌词
-  lyricsContent.innerHTML = '';
-  lyricsLines.forEach((line, index) => {
-    const div = document.createElement('div');
-    div.className = 'lyrics-line';
-    div.dataset.time = line.time;
-    div.textContent = line.text;
-    div.addEventListener('click', () => {
-      audio.currentTime = line.time;
-    });
-    lyricsContent.appendChild(div);
-  });
-}
-
-function updateLyrics() {
-  if (!lyricsLines || lyricsLines.length === 0) return;
-  
-  const currentTime = audio.currentTime;
-  
-  // 清除之前的超时
-  if (lyricsTimeoutId) {
-    clearTimeout(lyricsTimeoutId);
-  }
-  
-  // 找到当前应该高亮的歌词行
-  let activeIndex = -1;
-  for (let i = lyricsLines.length - 1; i >= 0; i--) {
-    if (currentTime >= lyricsLines[i].time) {
-      activeIndex = i;
-      break;
-    }
-  }
-  
-  // 更新歌词高亮
-  document.querySelectorAll('.lyrics-line').forEach((line, index) => {
-    line.classList.toggle('active', index === activeIndex);
-  });
-  
-  // 如果有歌词，滚动到当前行
-  if (activeIndex >= 0) {
-    const activeLine = document.querySelectorAll('.lyrics-line')[activeIndex];
-    const lyricsWrapper = document.getElementById('lyrics-wrapper');
-    
-    // 计算滚动位置
-    const lineHeight = activeLine.offsetHeight;
-    const wrapperHeight = lyricsWrapper.offsetHeight;
-    const lineTop = activeLine.offsetTop;
-    const lineBottom = lineTop + lineHeight;
-    
-    if (lineTop < lyricsWrapper.scrollTop || lineBottom > lyricsWrapper.scrollTop + wrapperHeight) {
-      // 居中显示当前行
-      lyricsWrapper.scrollTop = lineTop - (wrapperHeight / 2) + (lineHeight / 2);
-    }
-  }
-  
-  // 设置下一次更新的超时
-  if (activeIndex >= 0 && activeIndex < lyricsLines.length - 1) {
-    const nextTime = lyricsLines[activeIndex + 1].time;
-    const delay = (nextTime - currentTime) * 1000;
-    lyricsTimeoutId = setTimeout(updateLyrics, Math.max(0, delay));
-  } else if (activeIndex === lyricsLines.length - 1) {
-    // 最后一行歌词，5秒后清除高亮
-    lyricsTimeoutId = setTimeout(() => {
-      document.querySelectorAll('.lyrics-line').forEach(line => {
-        line.classList.remove('active');
-      });
-    }, 5000);
-  }
-}
-
 // 核心：加载歌曲，autoPlay 决定是否自动播放
 function loadSong(index, autoPlay = false) {
   if (!playlist.length) return;
@@ -260,11 +100,10 @@ function loadSong(index, autoPlay = false) {
   audio.load();
 
   applyBackground(currentIndex);
-  loadLyrics(currentIndex); // 加载歌词
 
-  // 更新系统锁屏和通知栏的元数据
+  // ⭐️ 更新系统锁屏和通知栏的元数据
   if ('mediaSession' in navigator) {
-    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.17/images/music/cover/default.jpg';
+    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.11/images/music/cover/daylight.jpg';
     navigator.mediaSession.metadata = new MediaMetadata({
       title: song.title,
       artist: song.artist,
@@ -330,16 +169,6 @@ function switchMode() {
   preloadNextSong();
 }
 
-function toggleLyrics() {
-  lyricsContainer.style.display = lyricsContainer.style.display === 'none' ? 'block' : 'none';
-  lyricsBtn.classList.toggle('active', lyricsContainer.style.display === 'block');
-  
-  // 如果显示歌词，立即更新一次
-  if (lyricsContainer.style.display === 'block') {
-    updateLyrics();
-  }
-}
-
 function renderPlaylist() {
   playlistItems.innerHTML = '';
   playlist.forEach((song, index) => {
@@ -399,30 +228,17 @@ function renderPlaylist() {
   });
 }
 
-// 同步播放/暂停状态到系统锁屏
+// ⭐️ 同步播放/暂停状态到系统锁屏
 audio.addEventListener('play', () => {
   isPlaying = true;
   updatePlayIcon();
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.playbackState = 'playing';
-    // 增强通知栏控制器
-    updateNotificationControls();
-  }
-  // 开始更新歌词
-  updateLyrics();
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
 });
 
 audio.addEventListener('pause', () => {
   isPlaying = false;
   updatePlayIcon();
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.playbackState = 'paused';
-  }
-  // 停止歌词更新
-  if (lyricsTimeoutId) {
-    clearTimeout(lyricsTimeoutId);
-    lyricsTimeoutId = null;
-  }
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
 });
 
 audio.addEventListener('timeupdate', () => {
@@ -431,22 +247,13 @@ audio.addEventListener('timeupdate', () => {
   progressCurrent.style.width = `${percent}%`;
   currentTimeEl.textContent = formatTime(audio.currentTime);
 
-  // 更新歌词
-  if (lyricsContainer.style.display === 'block') {
-    updateLyrics();
-  }
-
-  // 剩余 15 秒时触发预加载
+  // ⭐️ 剩余 15 秒时触发预加载
   if (audio.duration - audio.currentTime <= 15 && audio.duration - audio.currentTime > 0) {
     preloadNextSong();
   }
 });
 
-audio.addEventListener('loadedmetadata', () => {
-  totalTimeEl.textContent = formatTime(audio.duration);
-  // 加载歌词
-  loadLyrics(currentIndex);
-});
+audio.addEventListener('loadedmetadata', () => totalTimeEl.textContent = formatTime(audio.duration));
 
 audio.addEventListener('ended', () => {
   if (playMode === 'single') {
@@ -475,11 +282,10 @@ prevBtn.addEventListener('click', () => prevSong());
 modeBtn.addEventListener('click', switchMode);
 listBtn.addEventListener('click', () => playlistPanel.classList.add('active'));
 closeListBtn.addEventListener('click', () => playlistPanel.classList.remove('active'));
-lyricsBtn.addEventListener('click', toggleLyrics);
 
 window.addEventListener('resize', () => applyBackground(currentIndex));
 
-// 注册锁屏/通知栏的控制按钮事件
+// ⭐️ 注册锁屏/通知栏的控制按钮事件
 if ('mediaSession' in navigator) {
   navigator.mediaSession.setActionHandler('play', () => { audio.play(); });
   navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); });
@@ -490,23 +296,5 @@ if ('mediaSession' in navigator) {
   });
 }
 
-// 增强通知栏控制器
-function updateNotificationControls() {
-  if ('mediaSession' in navigator) {
-    // 设置通知栏图标
-    navigator.mediaSession.setActionHandler('play', () => { audio.play(); });
-    navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); });
-    navigator.mediaSession.setActionHandler('previoustrack', () => { prevSong(true); });
-    navigator.mediaSession.setActionHandler('nexttrack', () => { nextSong(true); });
-    
-    // 添加自定义操作（可选）
-    if (navigator.mediaSession.setActionHandler) {
-      try {
-        // 设置播放状态
-        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-      } catch (e) {
-        console.log('设置媒体会话状态失败:', e);
-      }
-    }
-  }
-}
+// 启动播放器
+init();

@@ -365,11 +365,12 @@ function switchMode() {
 }
 
 function toggleLyrics() {
-  lyricsContainer.style.display = lyricsContainer.style.display === 'none' ? 'block' : 'none';
-  lyricsBtn.classList.toggle('active', lyricsContainer.style.display === 'block');
+  const isVisible = lyricsContainer.style.display !== 'none';
+  lyricsContainer.style.display = isVisible ? 'none' : 'block';
+  lyricsBtn.classList.toggle('active', !isVisible);
   
   // 如果显示歌词，立即更新一次
-  if (lyricsContainer.style.display === 'block') {
+  if (!isVisible) {
     updateLyrics();
   }
 }

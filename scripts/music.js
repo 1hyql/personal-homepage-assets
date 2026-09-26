@@ -34,8 +34,8 @@ let currentLyrics = null;
 let lyricsLines = [];
 let lyricsTimeoutId = null;
 
-// 等待DOM加载完成
-window.addEventListener('DOMContentLoaded', init);
+// 等待DOM和外部资源加载完成
+window.addEventListener('load', init);
 
 function init() {
   try {

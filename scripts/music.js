@@ -196,7 +196,7 @@ function parseLrcText(text) {
   
   lines.forEach(line => {
     // 匹配 [mm:ss.xx] 文本 格式
-    const match = line.match(/\[(\d{2}):(\d{2})\.(?\d{2})\]\s*(.+)/);
+    const match = line.match(/\[(\d{2}):(\d{2})\.\d{2}\]\s*(.+)/);
     if (match) {
       const minutes = parseInt(match[1]);
       const seconds = parseInt(match[2]);

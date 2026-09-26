@@ -34,34 +34,12 @@ let currentLyrics = null;
 let lyricsLines = [];
 let lyricsTimeoutId = null;
 
-// 等待音乐数据加载完成
-window.addEventListener('load', async () => {
-  await loadMusicData();
-  init();
-});
-
-async function loadMusicData() {
-  try {
-    const response = await fetch('/workspace/music-data.json');
-    if (!response.ok) {
-      throw new Error('Failed to load music data');
-    }
-    const data = await response.json();
-    window.MUSIC_DATA = data;
-  } catch (error) {
-    console.error('加载音乐数据失败:', error);
-    // 设置默认数据防止页面崩溃
-    window.MUSIC_DATA = {
-      defaultPcBg: "",
-      defaultMobileBg: "",
-      defaultCover: "https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.17/images/music/cover/default.jpg",
-      playlist: []
-    };
-  }
-}
+// 等待DOM加载完成
+window.addEventListener('DOMContentLoaded', init);
 
 function init() {
   try {
+    // 直接使用内嵌的数据
     const data = window.MUSIC_DATA;
     if (!data || !data.playlist || data.playlist.length === 0) {
       throw new Error('MUSIC_DATA 未定义或歌单为空');
@@ -172,8 +150,64 @@ function loadLyrics(index) {
     return;
   }
   
+  // 如果歌词是URL，加载歌词文件
+  if (typeof currentLyrics === 'string') {
+    loadLyricsFromUrl(currentLyrics);
+    return;
+  }
+  
   // 按时间排序歌词
   lyricsLines = [...currentLyrics].sort((a, b) => a.time - b.time);
+  
+  // 渲染歌词
+  lyricsContent.innerHTML = '';
+  lyricsLines.forEach((line, index) => {
+    const div = document.createElement('div');
+    div.className = 'lyrics-line';
+    div.dataset.time = line.time;
+    div.textContent = line.text;
+    div.addEventListener('click', () => {
+      audio.currentTime = line.time;
+    });
+    lyricsContent.appendChild(div);
+  });
+}
+
+// 从URL加载歌词
+async function loadLyricsFromUrl(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const text = await response.text();
+    parseLrcText(text);
+  } catch (error) {
+    console.error('加载歌词失败:', error);
+    lyricsContent.innerHTML = '<div class="lyrics-line" id="no-lyrics">歌词加载失败</div>';
+    lyricsLines = [];
+  }
+}
+
+// 解析LRC格式歌词
+function parseLrcText(text) {
+  const lines = text.split('\n');
+  lyricsLines = [];
+  
+  lines.forEach(line => {
+    // 匹配 [mm:ss.xx] 文本 格式
+    const match = line.match(/\[(\d{2}):(\d{2})\.(?\d{2})\]\s*(.+)/);
+    if (match) {
+      const minutes = parseInt(match[1]);
+      const seconds = parseInt(match[2]);
+      const time = minutes * 60 + seconds;
+      const text = match[3];
+      lyricsLines.push({ time, text });
+    }
+  });
+  
+  // 按时间排序
+  lyricsLines.sort((a, b) => a.time - b.time);
   
   // 渲染歌词
   lyricsContent.innerHTML = '';
@@ -264,7 +298,7 @@ function loadSong(index, autoPlay = false) {
 
   // 更新系统锁屏和通知栏的元数据
   if ('mediaSession' in navigator) {
-    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.0.17/images/music/cover/default.jpg';
+    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.1.1/images/music/cover/default.jpg';
     navigator.mediaSession.metadata = new MediaMetadata({
       title: song.title,
       artist: song.artist,

@@ -139,19 +139,29 @@ function preloadNextSong() {
 
 // 歌词相关函数
 function loadLyrics(index) {
-  if (!playlist[index]) return;
+  if (!playlist[index]) {
+    console.log('没有找到歌曲索引:', index);
+    return;
+  }
   
   const song = playlist[index];
   currentLyrics = song.lyrics;
   
+  console.log('加载歌词 - 歌曲:', song.title);
+  console.log('歌词数据:', currentLyrics);
+  
   if (!currentLyrics || currentLyrics.length === 0) {
-    lyricsContent.innerHTML = '<div class="lyrics-line" id="no-lyrics">暂无歌词</div>';
+    console.log('没有歌词数据');
+    if (lyricsContent) {
+      lyricsContent.innerHTML = '<div class="lyrics-line" id="no-lyrics">暂无歌词</div>';
+    }
     lyricsLines = [];
     return;
   }
   
   // 如果歌词是URL，加载歌词文件
   if (typeof currentLyrics === 'string') {
+    console.log('歌词是URL，从网络加载:', currentLyrics);
     loadLyricsFromUrl(currentLyrics);
     return;
   }
@@ -159,18 +169,22 @@ function loadLyrics(index) {
   // 按时间排序歌词
   lyricsLines = [...currentLyrics].sort((a, b) => a.time - b.time);
   
+  console.log('内嵌歌词加载完成，共', lyricsLines.length, '行');
+  
   // 渲染歌词
-  lyricsContent.innerHTML = '';
-  lyricsLines.forEach((line, index) => {
-    const div = document.createElement('div');
-    div.className = 'lyrics-line';
-    div.dataset.time = line.time;
-    div.textContent = line.text;
-    div.addEventListener('click', () => {
-      audio.currentTime = line.time;
+  if (lyricsContent) {
+    lyricsContent.innerHTML = '';
+    lyricsLines.forEach((line, index) => {
+      const div = document.createElement('div');
+      div.className = 'lyrics-line';
+      div.dataset.time = line.time;
+      div.textContent = line.text;
+      div.addEventListener('click', () => {
+        audio.currentTime = line.time;
+      });
+      lyricsContent.appendChild(div);
     });
-    lyricsContent.appendChild(div);
-  });
+  }
 }
 
 // 从URL加载歌词
@@ -196,20 +210,91 @@ function parseLrcText(text) {
   const lines = text.split('\n');
   lyricsLines = [];
   
-  lines.forEach(line => {
-    // 匹配 [mm:ss.xx] 文本 格式
-    const match = line.match(/\[(\d{2}):(\d{2})\.\d{2}\]\s*(.+)/);
-    if (match) {
-      const minutes = parseInt(match[1]);
-      const seconds = parseInt(match[2]);
-      const time = minutes * 60 + seconds;
-      const text = match[3];
+  console.log('开始解析歌词，原始文本:', text);
+  
+  lines.forEach((line, index) => {
+    line = line.trim();
+    if (!line) return;
+    
+    // 匹配 [mm:ss.xxx] 文本 格式（毫秒，3位）
+    const matchMs3 = line.match(/\[(\d{2}):(\d{2})\.(\d{3})\]\s*(.+)/);
+    // 匹配 [mm:ss.xx] 文本 格式（毫秒，2位）
+    const matchMs2 = line.match(/\[(\d{2}):(\d{2})\.(\d{2})\]\s*(.+)/);
+    // 匹配 [mm:ss] 文本 格式（秒）
+    const matchS = line.match(/\[(\d{2}):(\d{2})\]\s*(.+)/);
+    // 匹配 mm.ss.xxx 格式（分钟.秒.毫秒）
+    const matchDotMs3 = line.match(/(\d{2})\.(\d{2})\.(\d{3})\s*(.+)/);
+    // 匹配 mm.ss.xx 格式（分钟.秒.毫秒）
+    const matchDotMs2 = line.match(/(\d{2})\.(\d{2})\.(\d{2})\s*(.+)/);
+    // 匹配 mm.ss 格式（分钟.秒）
+    const matchDotS = line.match(/(\d{2})\.(\d{2})\s*(.+)/);
+    
+    if (matchMs3) {
+      // [mm:ss.xxx] 格式
+      const minutes = parseInt(matchMs3[1]);
+      const seconds = parseInt(matchMs3[2]);
+      const milliseconds = parseInt(matchMs3[3]);
+      const time = minutes * 60 + seconds + milliseconds / 1000;
+      const text = matchMs3[4];
       lyricsLines.push({ time, text });
+      console.log(`第${index}行: [${matchMs3[0]}] -> 时间: ${time}s, 文本: "${text}"`);
+    } else if (matchMs2) {
+      // [mm:ss.xx] 格式
+      const minutes = parseInt(matchMs2[1]);
+      const seconds = parseInt(matchMs2[2]);
+      const milliseconds = parseInt(matchMs2[3]);
+      const time = minutes * 60 + seconds + milliseconds / 100;
+      const text = matchMs2[4];
+      lyricsLines.push({ time, text });
+      console.log(`第${index}行: [${matchMs2[0]}] -> 时间: ${time}s, 文本: "${text}"`);
+    } else if (matchS) {
+      // [mm:ss] 格式
+      const minutes = parseInt(matchS[1]);
+      const seconds = parseInt(matchS[2]);
+      const time = minutes * 60 + seconds;
+      const text = matchS[3];
+      lyricsLines.push({ time, text });
+      console.log(`第${index}行: [${matchS[0]}] -> 时间: ${time}s, 文本: "${text}"`);
+    } else if (matchDotMs3) {
+      // mm.ss.xxx 格式
+      const minutes = parseInt(matchDotMs3[1]);
+      const seconds = parseInt(matchDotMs3[2]);
+      const milliseconds = parseInt(matchDotMs3[3]);
+      const time = minutes * 60 + seconds + milliseconds / 1000;
+      const text = matchDotMs3[4];
+      lyricsLines.push({ time, text });
+      console.log(`第${index}行: ${matchDotMs3[0]} -> 时间: ${time}s, 文本: "${text}"`);
+    } else if (matchDotMs2) {
+      // mm.ss.xx 格式
+      const minutes = parseInt(matchDotMs2[1]);
+      const seconds = parseInt(matchDotMs2[2]);
+      const milliseconds = parseInt(matchDotMs2[3]);
+      const time = minutes * 60 + seconds + milliseconds / 100;
+      const text = matchDotMs2[4];
+      lyricsLines.push({ time, text });
+      console.log(`第${index}行: ${matchDotMs2[0]} -> 时间: ${time}s, 文本: "${text}"`);
+    } else if (matchDotS) {
+      // mm.ss 格式
+      const minutes = parseInt(matchDotS[1]);
+      const seconds = parseInt(matchDotS[2]);
+      const time = minutes * 60 + seconds;
+      const text = matchDotS[3];
+      lyricsLines.push({ time, text });
+      console.log(`第${index}行: ${matchDotS[0]} -> 时间: ${time}s, 文本: "${text}"`);
+    } else {
+      console.log(`第${index}行: 无法解析 -> "${line}"`);
     }
   });
   
   // 按时间排序
   lyricsLines.sort((a, b) => a.time - b.time);
+  
+  console.log('解析歌词完成，共', lyricsLines.length, '行');
+  if (lyricsLines.length > 0) {
+    console.log('歌词时间范围:', lyricsLines[0].time, '到', lyricsLines[lyricsLines.length - 1].time);
+    console.log('第一行:', lyricsLines[0]);
+    console.log('最后一行:', lyricsLines[lyricsLines.length - 1]);
+  }
   
   // 渲染歌词
   if (lyricsContent) {
@@ -228,9 +313,13 @@ function parseLrcText(text) {
 }
 
 function updateLyrics() {
-  if (!lyricsLines || lyricsLines.length === 0) return;
+  if (!lyricsLines || lyricsLines.length === 0) {
+    console.log('没有歌词数据，跳过更新');
+    return;
+  }
   
   const currentTime = audio.currentTime;
+  console.log(`更新歌词 - 当前时间: ${currentTime}s`);
   
   // 清除之前的超时
   if (lyricsTimeoutId) {
@@ -245,6 +334,8 @@ function updateLyrics() {
       break;
     }
   }
+  
+  console.log(`当前高亮歌词行: ${activeIndex}, 时间: ${lyricsLines[activeIndex]?.time}s, 文本: "${lyricsLines[activeIndex]?.text}"`);
   
   // 更新歌词高亮
   document.querySelectorAll('.lyrics-line').forEach((line, index) => {
@@ -263,6 +354,7 @@ function updateLyrics() {
       if (lineTop < lyricsSection.scrollTop || lineBottom > lyricsSection.scrollTop + wrapperHeight) {
         // 居中显示当前行
         lyricsSection.scrollTop = lineTop - (wrapperHeight / 2) + (lineHeight / 2);
+        console.log('滚动歌词到行:', activeIndex);
       }
     }
   }
@@ -271,9 +363,11 @@ function updateLyrics() {
   if (activeIndex >= 0 && activeIndex < lyricsLines.length - 1) {
     const nextTime = lyricsLines[activeIndex + 1].time;
     const delay = (nextTime - currentTime) * 1000;
+    console.log(`设置下一次歌词更新: ${nextTime}s, 延迟: ${delay}ms`);
     lyricsTimeoutId = setTimeout(updateLyrics, Math.max(0, delay));
   } else if (activeIndex === lyricsLines.length - 1) {
     // 最后一行歌词，5秒后清除高亮
+    console.log('最后一行歌词，5秒后清除高亮');
     lyricsTimeoutId = setTimeout(() => {
       document.querySelectorAll('.lyrics-line').forEach(line => {
         line.classList.remove('active');

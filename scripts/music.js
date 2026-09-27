@@ -319,7 +319,9 @@ function updateLyrics() {
   }
   
   const currentTime = audio.currentTime;
-  console.log(`更新歌词 - 当前时间: ${currentTime}s`);
+  console.log(`=== 更新歌词 ===`);
+  console.log(`当前时间: ${currentTime}s`);
+  console.log(`歌词总行数: ${lyricsLines.length}`);
   
   // 清除之前的超时
   if (lyricsTimeoutId) {
@@ -327,35 +329,118 @@ function updateLyrics() {
   }
   
   // 找到当前应该高亮的歌词行
+  // 应该找时间最接近当前时间但不大于当前时间的歌词
   let activeIndex = -1;
-  for (let i = lyricsLines.length - 1; i >= 0; i--) {
-    if (currentTime >= lyricsLines[i].time) {
+  let minDiff = Infinity;
+  
+  for (let i = 0; i < lyricsLines.length; i++) {
+    const diff = currentTime - lyricsLines[i].time;
+    if (diff >= 0 && diff < minDiff) {
+      minDiff = diff;
       activeIndex = i;
-      break;
     }
   }
   
-  console.log(`当前高亮歌词行: ${activeIndex}, 时间: ${lyricsLines[activeIndex]?.time}s, 文本: "${lyricsLines[activeIndex]?.text}"`);
+  // 如果没有找到合适的歌词（当前时间小于所有歌词时间），显示第一行
+  if (activeIndex === -1) {
+    activeIndex = 0;
+    console.log('当前时间小于所有歌词时间，显示第一行');
+  } else {
+    console.log(`找到匹配歌词行: ${activeIndex}, 时间差: ${minDiff}s`);
+  }
+  
+  console.log(`高亮歌词行: ${activeIndex}`);
+  console.log(`歌词时间: ${lyricsLines[activeIndex]?.time}s`);
+  console.log(`歌词文本: "${lyricsLines[activeIndex]?.text}"`);
+  console.log(`时间差: ${currentTime - (lyricsLines[activeIndex]?.time || 0)}s`);
   
   // 更新歌词高亮
-  document.querySelectorAll('.lyrics-line').forEach((line, index) => {
-    line.classList.toggle('active', index === activeIndex);
+  const lyricElements = document.querySelectorAll('.lyrics-line');
+  lyricElements.forEach((line, index) => {
+    const shouldBeActive = index === activeIndex;
+    line.classList.toggle('active', shouldBeActive);
+    
+    // 调试信息
+    if (shouldBeActive) {
+      console.log(`应用active类到行${index}: "${line.textContent}"`);
+      console.log(`行${index}的CSS类:`, line.className);
+    }
+  });
+  
+  // 验证active类是否正确应用
+  setTimeout(() => {
+    const activeElement = document.querySelector('.lyrics-line.active');
+    if (activeElement) {
+      console.log('✅ 找到active元素:', activeElement.textContent);
+      console.log('active元素样式:', window.getComputedStyle(activeElement));
+    } else {
+      console.log('❌ 没有找到active元素');
+    }
+  }, 100);
+  
+  // 显示所有歌词行的时间信息用于调试
+  console.log('=== 所有歌词行时间 ===');
+  lyricsLines.forEach((line, index) => {
+    const isActive = index === activeIndex;
+    const diff = currentTime - line.time;
+    const status = isActive ? '← 当前' : (diff >= 0 ? `(${diff.toFixed(2)}s前)` : `(${(-diff).toFixed(2)}s后)`);
+    console.log(`行${index}: ${line.time}s "${line.text}" ${status}`);
   });
   
   // 如果有歌词容器，滚动到当前行
-  if (activeIndex >= 0 && lyricsSection) {
-    const activeLine = document.querySelectorAll('.lyrics-line')[activeIndex];
-    if (activeLine && lyricsSection) {
-      const lineHeight = activeLine.offsetHeight;
-      const wrapperHeight = lyricsSection.offsetHeight;
-      const lineTop = activeLine.offsetTop;
-      const lineBottom = lineTop + lineHeight;
+  if (activeIndex >= 0 && lyricsSection && lyricElements[activeIndex]) {
+    const activeLine = lyricElements[activeIndex];
+    const lineHeight = activeLine.offsetHeight;
+    const wrapperHeight = lyricsSection.offsetHeight;
+    const lineTop = activeLine.offsetTop;
+    const lineBottom = lineTop + lineHeight;
+    
+    // 检查当前行是否在可视区域内
+    const isVisible = lineTop >= lyricsSection.scrollTop && 
+                      lineBottom <= lyricsSection.scrollTop + wrapperHeight;
+    
+    console.log('=== 滚动检查 ===');
+    console.log('当前行索引:', activeIndex);
+    console.log('行位置:', lineTop, '-', lineBottom);
+    console.log('可视区域:', lyricsSection.scrollTop, '-', lyricsSection.scrollTop + wrapperHeight);
+    console.log('是否可见:', isVisible);
+    
+    if (!isVisible) {
+      // 智能滚动：确保当前行在可视区域内，但不要过度滚动
+      let targetScroll;
       
-      if (lineTop < lyricsSection.scrollTop || lineBottom > lyricsSection.scrollTop + wrapperHeight) {
-        // 居中显示当前行
-        lyricsSection.scrollTop = lineTop - (wrapperHeight / 2) + (lineHeight / 2);
-        console.log('滚动歌词到行:', activeIndex);
+      // 如果当前行在可视区域上方，滚动到当前行在可视区域中上部
+      if (lineTop < lyricsSection.scrollTop) {
+        targetScroll = lineTop - (wrapperHeight * 0.25); // 留出25%的空间在上部
+        console.log('行在上方，向上滚动');
+      } 
+      // 如果当前行在可视区域下方，滚动到当前行在可视区域中下部
+      else if (lineBottom > lyricsSection.scrollTop + wrapperHeight) {
+        targetScroll = lineTop - (wrapperHeight * 0.75); // 留出25%的空间在下部
+        console.log('行在下方，向下滚动');
       }
+      
+      // 确保滚动范围在合理范围内
+      const maxScroll = activeLine.parentElement.scrollHeight - wrapperHeight;
+      targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+      
+      console.log('目标滚动位置:', targetScroll);
+      console.log('最大滚动位置:', maxScroll);
+      
+      lyricsSection.scrollTop = targetScroll;
+      
+      // 验证滚动结果
+      setTimeout(() => {
+        const newLineTop = activeLine.offsetTop;
+        const newLineBottom = newLineTop + lineHeight;
+        const newScrollTop = lyricsSection.scrollTop;
+        const newScrollBottom = newScrollTop + wrapperHeight;
+        
+        console.log('=== 滚动后验证 ===');
+        console.log('新行位置:', newLineTop, '-', newLineBottom);
+        console.log('新可视区域:', newScrollTop, '-', newScrollBottom);
+        console.log('滚动成功:', newLineTop >= newScrollTop && newLineBottom <= newScrollBottom);
+      }, 100);
     }
   }
   
@@ -363,7 +448,8 @@ function updateLyrics() {
   if (activeIndex >= 0 && activeIndex < lyricsLines.length - 1) {
     const nextTime = lyricsLines[activeIndex + 1].time;
     const delay = (nextTime - currentTime) * 1000;
-    console.log(`设置下一次歌词更新: ${nextTime}s, 延迟: ${delay}ms`);
+    console.log(`下一次歌词更新: ${nextTime}s (${lyricsLines[activeIndex + 1].text})`);
+    console.log(`延迟: ${delay}ms`);
     lyricsTimeoutId = setTimeout(updateLyrics, Math.max(0, delay));
   } else if (activeIndex === lyricsLines.length - 1) {
     // 最后一行歌词，5秒后清除高亮
@@ -395,7 +481,7 @@ function loadSong(index, autoPlay = false) {
 
   // 更新系统锁屏和通知栏的元数据
   if ('mediaSession' in navigator) {
-    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.1.1/images/music/cover/default.jpg';
+    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdmirror.com/gh/1hyql/personal-homepage-assets@v1.1.1/images/music/cover/default.jpg';
     navigator.mediaSession.metadata = new MediaMetadata({
       title: song.title,
       artist: song.artist,

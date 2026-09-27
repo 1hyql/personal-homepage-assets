@@ -20,6 +20,10 @@
   cursor: default;
   user-select: none;
   line-height: 1.5;
+  min-height: 24px; /* 确保行高一致 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lyrics-line.active {
@@ -30,10 +34,11 @@
   opacity: 1 !important;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 12px;
   margin: 6px 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
+  min-height: 32px; /* 高亮行稍高 */
 }
 
 .lyrics-line:hover {

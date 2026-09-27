@@ -33,6 +33,7 @@ const bgContainer = document.getElementById('bg-container');
 let currentLyrics = null;
 let lyricsLines = [];
 let lyricsTimeoutId = null;
+let lastScrolledIndex = -1;
 
 // 等待DOM和外部资源加载完成
 window.addEventListener('load', init);
@@ -184,6 +185,12 @@ function loadLyrics(index) {
       });
       lyricsContent.appendChild(div);
     });
+    
+    // 重置滚动状态
+    lastScrolledIndex = -1;
+    if (lyricsSection) {
+      lyricsSection.scrollTop = 0;
+    }
   }
 }
 
@@ -309,6 +316,12 @@ function parseLrcText(text) {
       });
       lyricsContent.appendChild(div);
     });
+    
+    // 重置滚动状态
+    lastScrolledIndex = -1;
+    if (lyricsSection) {
+      lyricsSection.scrollTop = 0;
+    }
   }
 }
 
@@ -356,93 +369,43 @@ function updateLyrics() {
   
   // 更新歌词高亮
   const lyricElements = document.querySelectorAll('.lyrics-line');
-  lyricElements.forEach((line, index) => {
-    const shouldBeActive = index === activeIndex;
-    line.classList.toggle('active', shouldBeActive);
-    
-    // 调试信息
-    if (shouldBeActive) {
-      console.log(`应用active类到行${index}: "${line.textContent}"`);
-      console.log(`行${index}的CSS类:`, line.className);
-    }
-  });
+  lyricElements.forEach((line, i) => line.classList.toggle('active', i === activeIndex));
   
-  // 验证active类是否正确应用
-  setTimeout(() => {
-    const activeElement = document.querySelector('.lyrics-line.active');
-    if (activeElement) {
-      console.log('✅ 找到active元素:', activeElement.textContent);
-      console.log('active元素样式:', window.getComputedStyle(activeElement));
-    } else {
-      console.log('❌ 没有找到active元素');
-    }
-  }, 100);
-  
-  // 显示所有歌词行的时间信息用于调试
-  console.log('=== 所有歌词行时间 ===');
-  lyricsLines.forEach((line, index) => {
-    const isActive = index === activeIndex;
-    const diff = currentTime - line.time;
-    const status = isActive ? '← 当前' : (diff >= 0 ? `(${diff.toFixed(2)}s前)` : `(${(-diff).toFixed(2)}s后)`);
-    console.log(`行${index}: ${line.time}s "${line.text}" ${status}`);
-  });
-  
-  // 如果有歌词容器，滚动到当前行
-  if (activeIndex >= 0 && lyricsSection && lyricElements[activeIndex]) {
+  // 使用 getBoundingClientRect 计算行位置并居中
+  if (activeIndex !== lastScrolledIndex) {
     const activeLine = lyricElements[activeIndex];
-    const lineHeight = activeLine.offsetHeight;
-    const wrapperHeight = lyricsSection.offsetHeight;
-    const lineTop = activeLine.offsetTop;
-    const lineBottom = lineTop + lineHeight;
-    
-    // 检查当前行是否在可视区域内
-    const isVisible = lineTop >= lyricsSection.scrollTop && 
-                      lineBottom <= lyricsSection.scrollTop + wrapperHeight;
-    
-    console.log('=== 滚动检查 ===');
-    console.log('当前行索引:', activeIndex);
-    console.log('行位置:', lineTop, '-', lineBottom);
-    console.log('可视区域:', lyricsSection.scrollTop, '-', lyricsSection.scrollTop + wrapperHeight);
-    console.log('是否可见:', isVisible);
-    
-    if (!isVisible) {
-      // 智能滚动：确保当前行在可视区域内，但不要过度滚动
-      let targetScroll;
-      
-      // 如果当前行在可视区域上方，滚动到当前行在可视区域中上部
-      if (lineTop < lyricsSection.scrollTop) {
-        targetScroll = lineTop - (wrapperHeight * 0.25); // 留出25%的空间在上部
-        console.log('行在上方，向上滚动');
-      } 
-      // 如果当前行在可视区域下方，滚动到当前行在可视区域中下部
-      else if (lineBottom > lyricsSection.scrollTop + wrapperHeight) {
-        targetScroll = lineTop - (wrapperHeight * 0.75); // 留出25%的空间在下部
-        console.log('行在下方，向下滚动');
-      }
-      
-      // 确保滚动范围在合理范围内
-      const maxScroll = activeLine.parentElement.scrollHeight - wrapperHeight;
-      targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
-      
-      console.log('目标滚动位置:', targetScroll);
-      console.log('最大滚动位置:', maxScroll);
-      
-      lyricsSection.scrollTop = targetScroll;
-      
-      // 验证滚动结果
-      setTimeout(() => {
-        const newLineTop = activeLine.offsetTop;
-        const newLineBottom = newLineTop + lineHeight;
-        const newScrollTop = lyricsSection.scrollTop;
-        const newScrollBottom = newScrollTop + wrapperHeight;
-        
-        console.log('=== 滚动后验证 ===');
-        console.log('新行位置:', newLineTop, '-', newLineBottom);
-        console.log('新可视区域:', newScrollTop, '-', newScrollBottom);
-        console.log('滚动成功:', newLineTop >= newScrollTop && newLineBottom <= newScrollBottom);
-      }, 100);
+    if (activeLine && lyricsSection) {
+      const cRect = lyricsSection.getBoundingClientRect();
+      const lRect = activeLine.getBoundingClientRect();
+      const lineTop = lRect.top - cRect.top + lyricsSection.scrollTop;
+      const viewH = lyricsSection.clientHeight;
+      let target = lineTop - (viewH - lRect.height) / 2;
+      target = Math.max(0, Math.min(target, lyricsSection.scrollHeight - viewH));
+      lyricsSection.scrollTo({ top: target, behavior: 'smooth' });
+      console.log(`滚动到行 ${activeIndex}，目标位置: ${target}`);
     }
+    lastScrolledIndex = activeIndex;
   }
+  
+    // 验证active类是否正确应用
+    setTimeout(() => {
+      const activeElement = document.querySelector('.lyrics-line.active');
+      if (activeElement) {
+        console.log('✅ 找到active元素:', activeElement.textContent);
+        console.log('active元素样式:', window.getComputedStyle(activeElement));
+      } else {
+        console.log('❌ 没有找到active元素');
+      }
+    }, 100);
+  
+    // 显示所有歌词行的时间信息用于调试
+    console.log('=== 所有歌词行时间 ===');
+    lyricsLines.forEach((line, index) => {
+      const isActive = index === activeIndex;
+      const diff = currentTime - line.time;
+      const status = isActive ? '← 当前' : (diff >= 0 ? `(${diff.toFixed(2)}s前)` : `(${(-diff).toFixed(2)}s后)`);
+      console.log(`行${index}: ${line.time}s "${line.text}" ${status}`);
+    })
   
   // 设置下一次更新的超时
   if (activeIndex >= 0 && activeIndex < lyricsLines.length - 1) {
@@ -481,7 +444,7 @@ function loadSong(index, autoPlay = false) {
 
   // 更新系统锁屏和通知栏的元数据
   if ('mediaSession' in navigator) {
-    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdmirror.com/gh/1hyql/personal-homepage-assets@v1.1.1/images/music/cover/default.jpg';
+    let coverUrl = song.cover || config.defaultCover || 'https://cdn.jsdelivr.net/gh/1hyql/personal-homepage-assets@v1.1.1/images/music/cover/default.jpg';
     navigator.mediaSession.metadata = new MediaMetadata({
       title: song.title,
       artist: song.artist,
